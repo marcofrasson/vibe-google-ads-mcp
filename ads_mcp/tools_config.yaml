@@ -7,3 +7,6 @@ namespaces:
   customers: true
   search: true
   metadata: true
+  # Write tools. Every one of them is a dry run (validate_only) unless the
+  # caller passes confirm=True. Set to false to run the server read-only.
+  mutate: true
