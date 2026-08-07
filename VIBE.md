@@ -30,6 +30,26 @@ Campanhas nascem `PAUSED` por padrão, para nada começar a gastar por acidente.
 
 Para rodar somente leitura, basta `mutate: false` no `ads_mcp/tools_config.yaml`.
 
+## Tools do namespace `planning` (leitura)
+
+Cobrem a capability **Keyword Planning Services**, declarada no formulário de Basic Access:
+
+- `generate_keyword_ideas` — ideias de palavra-chave com volume de busca médio mensal, concorrência
+  (nível + índice 0–100) e faixas de lance, já convertidas de micros para a moeda da conta.
+  Semeia por `keywords` (até 20), por `page_url`, ou pelos dois juntos (o melhor input). Defaults
+  para conta brasileira: geo `2076` (Brasil) e idioma `1014` (português). Ordena por volume.
+- `suggest_geo_targets` — descobre o id de um geo target pelo nome ("Joinville", "Caxias do Sul"),
+  para alimentar o `geo_target_ids` da tool acima. Não precisa de `customer_id`.
+
+Ambas são `readOnlyHint=True` e não alteram nada na conta — não têm, nem devem ter, `confirm`.
+
+> **Restrição de uso declarada no formulário:** dado do Keyword Planner é de **uso interno**. Não
+> pode ser exibido ao cliente, publicado em relatório/dashboard voltado ao cliente, nem revendido.
+> Expor a terceiros exigiria conformidade com a Required Minimum Functionality, que este servidor
+> não implementa.
+
+Desligar: `planning: false` no `ads_mcp/tools_config.yaml`.
+
 ## Validação local antes do round trip
 
 O que é checado antes de gastar uma chamada: formato do `customer_id` (aceita `777-012-3631`),
@@ -54,13 +74,27 @@ set -a; source ~/www/apps/vibe-digital-site/.env.local; set +a   # developer tok
 
 Auth via ADC: `gcloud auth application-default login` com os escopos `adwords` e `cloud-platform`.
 
-## Estado atual (25/jul/2026)
+## Estado atual (07/ago/2026)
 
 O developer token está com **Test Access**: só opera em contas de teste
-(`The developer token is only approved for use with test accounts`). O pedido de Basic Access foi
-enviado em 23/jul. Enquanto não sai, o caminho de teste é uma hierarquia de contas de teste
-(manager de teste criado com outra Google Account; o developer token de produção funciona nela).
+(`The developer token is only approved for use with test accounts`). O 1º pedido de Basic Access
+(23/jul, case `29842141618`) foi **recusado em 25/jul** porque o campo do MCC foi preenchido com
+`777-012-3631`, que é conta de anúncios comum. O reenvio corrigido — MCC `187-999-9144` — foi feito
+em **05/ago** e teve recebimento confirmado em 06/ago, case **`[3-1041000041172]`**; revisão inicial
+em ~5 dias úteis. A brand verification do OAuth já está aprovada desde 28/jul.
 
-Já validado: as 10 tools montam no servidor, a validação local recusa entradas inválidas, e o
-request chega à API com `validate_only=True` e o proto correto — falta apenas uma conta acessível
-para o commit real.
+Enquanto não sai, o caminho de teste é uma hierarquia de contas de teste (manager de teste criado
+com outra Google Account; o developer token de produção funciona nela).
+
+**Validado até aqui:** as 16 tools montam no servidor (13 originais + `mutate` + as 2 de
+`planning`), a validação local recusa entradas inválidas, e o request chega à API com
+`validate_only=True` e o proto correto.
+
+**Falta:** commit real das tools de `mutate` numa conta acessível, e a primeira chamada real de
+`planning` — o `KeywordPlanIdeaService` também passa pelo gate do Test Access, então só dá para
+exercitar de verdade depois do Basic Access (ou numa conta de teste).
+
+**Gotcha de ambiente:** com o app OAuth em modo *Testing*, o refresh token do ADC **expira em 7
+dias** e as chamadas passam a falhar com `invalid_grant: Token has been expired or revoked`. Refazer
+`gcloud auth application-default login --scopes=...adwords,...cloud-platform`. Publicar o app "Em
+produção" resolveria de vez, agora que a marca está verificada.

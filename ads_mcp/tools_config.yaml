@@ -10,3 +10,6 @@ namespaces:
   # Write tools. Every one of them is a dry run (validate_only) unless the
   # caller passes confirm=True. Set to false to run the server read-only.
   mutate: true
+  # Keyword planning (read-only): keyword ideas, search volume, geo lookup.
+  # Keyword Planner data is internal-use only - never expose it to clients.
+  planning: true
