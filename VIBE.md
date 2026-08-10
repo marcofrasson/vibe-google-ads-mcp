@@ -74,27 +74,24 @@ set -a; source ~/www/apps/vibe-digital-site/.env.local; set +a   # developer tok
 
 Auth via ADC: `gcloud auth application-default login` com os escopos `adwords` e `cloud-platform`.
 
-## Estado atual (07/ago/2026)
+## Estado atual (10/ago/2026)
 
-O developer token está com **Test Access**: só opera em contas de teste
-(`The developer token is only approved for use with test accounts`). O 1º pedido de Basic Access
-(23/jul, case `29842141618`) foi **recusado em 25/jul** porque o campo do MCC foi preenchido com
-`777-012-3631`, que é conta de anúncios comum. O reenvio corrigido — MCC `187-999-9144` — foi feito
-em **05/ago** e teve recebimento confirmado em 06/ago, case **`[3-1041000041172]`**; revisão inicial
-em ~5 dias úteis. A brand verification do OAuth já está aprovada desde 28/jul.
+**✅ Basic Access aprovado.** O developer token do MCC `187-999-9144` opera contas reais —
+leitura e escrita —, com cota de **15.000 operações/dia**. O gate de Test Access
+(`The developer token is only approved for use with test accounts`) não existe mais, e com ele
+caiu a necessidade da hierarquia de contas de teste.
 
-Enquanto não sai, o caminho de teste é uma hierarquia de contas de teste (manager de teste criado
-com outra Google Account; o developer token de produção funciona nela).
+**Validado:** as 16 tools montam no servidor (3 do upstream + 11 de `mutate` + 2 de `planning`),
+a validação local recusa entradas inválidas, e o request chega à API com `validate_only=True` e o
+proto correto.
 
-**Validado até aqui:** as 16 tools montam no servidor (13 originais + `mutate` + as 2 de
-`planning`), a validação local recusa entradas inválidas, e o request chega à API com
-`validate_only=True` e o proto correto.
-
-**Falta:** commit real das tools de `mutate` numa conta acessível, e a primeira chamada real de
-`planning` — o `KeywordPlanIdeaService` também passa pelo gate do Test Access, então só dá para
-exercitar de verdade depois do Basic Access (ou numa conta de teste).
+**Falta:** (a) registrar este fork no Claude Code — o MCP ativo ainda é o pipx do repo oficial,
+que é read-only, então as 13 tools próprias não estão expostas; (b) primeira chamada real das
+tools de `mutate` (dry-run e commit) e de `planning` numa conta sob o MCC.
 
 **Gotcha de ambiente:** com o app OAuth em modo *Testing*, o refresh token do ADC **expira em 7
-dias** e as chamadas passam a falhar com `invalid_grant: Token has been expired or revoked`. Refazer
-`gcloud auth application-default login --scopes=...adwords,...cloud-platform`. Publicar o app "Em
-produção" resolveria de vez, agora que a marca está verificada.
+dias** e as chamadas falham com `invalid_grant: Token has been expired or revoked`. Reautenticar
+com `gcloud auth application-default login --scopes=...adwords,...cloud-platform`. Agora que a
+marca está verificada (28/jul) e o token aprovado, publicar o app "Em produção" encerra esse
+ciclo de reautenticação.
+
