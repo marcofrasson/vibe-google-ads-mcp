@@ -25,8 +25,17 @@ Campanhas nascem `PAUSED` por padrão, para nada começar a gastar por acidente.
 - `create_campaign`, `update_campaign_status`
 - `add_campaign_geo_targets`, `add_campaign_languages`, `add_campaign_negative_keywords`
 - `create_ad_group`, `update_ad_group_status`
-- `add_keywords`
+- `add_keywords`, `update_keyword_status`
 - `create_responsive_search_ad`
+
+`update_keyword_status` é a tool da otimização do dia a dia: o relatório de termos de busca mostra
+uma keyword comprando a intenção errada e ela precisa sair sem mexer no resto do grupo. Aceita
+uma **lista** de resource names, porque na prática se pausa várias de uma vez. Os resource names
+vêm de um GAQL em `ad_group_criterion` e têm o formato
+`customers/<cid>/adGroupCriteria/<ad_group_id>~<criterion_id>` — passar um resource name de ad
+group por engano é barrado antes do round trip, com a mensagem explicando o formato esperado.
+`REMOVED` não tem volta: o histórico segue consultável por GAQL, mas a keyword não pode ser
+reativada. Para desligar temporariamente, use `PAUSED`.
 
 Para rodar somente leitura, basta `mutate: false` no `ads_mcp/tools_config.yaml`.
 

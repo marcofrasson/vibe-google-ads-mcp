@@ -782,3 +782,75 @@ def update_ad_group_status(
         confirm=confirm,
         summary=f"Set ad group {ad_group_resource_name} to {status.upper()}.",
     )
+
+
+@mutate_mcp.tool(annotations=_DESTRUCTIVE)
+def update_keyword_status(
+    customer_id: str,
+    criterion_resource_names: List[str],
+    status: str,
+    confirm: bool = False,
+) -> Dict[str, Any]:
+    """Enables, pauses or removes existing keywords, in bulk.
+
+    This is the day-to-day optimisation move: a search term report shows a
+    keyword burning budget on the wrong intent, and it has to go without
+    touching the rest of the ad group.
+
+    Get the resource names from a GAQL query on `ad_group_criterion`, e.g.
+    SELECT ad_group_criterion.resource_name, ad_group_criterion.keyword.text
+    FROM ad_group_criterion WHERE ad_group_criterion.type = 'KEYWORD'.
+
+    Args:
+        customer_id: The id of the customer.
+        criterion_resource_names: e.g. ['customers/123/adGroupCriteria/456~789'].
+            The '~' separates the ad group id from the criterion id.
+        status: ENABLED, PAUSED or REMOVED. REMOVED cannot be undone — the
+            keyword's history stays queryable, but it cannot be re-enabled.
+        confirm: False validates only; True commits the change.
+    """
+    customer_id = _normalize_customer_id(customer_id)
+    if status.upper() not in _ENTITY_STATUSES:
+        raise ToolError("status must be ENABLED, PAUSED or REMOVED.")
+    if not criterion_resource_names:
+        raise ToolError("criterion_resource_names must not be empty.")
+
+    # Catch an ad group resource name passed by mistake: without the '~' the
+    # API would reject it anyway, but late and with a much worse message.
+    for name in criterion_resource_names:
+        if "adGroupCriteria/" not in name or "~" not in name:
+            raise ToolError(
+                f"'{name}' is not an ad group criterion resource name. Expected "
+                "customers/<cid>/adGroupCriteria/<ad_group_id>~<criterion_id>."
+            )
+
+    client = utils.get_googleads_client()
+    operations = []
+    for name in criterion_resource_names:
+        operation = client.get_type("AdGroupCriterionOperation")
+        criterion = operation.update
+        criterion.resource_name = name
+        criterion.status = _enum(
+            client, "AdGroupCriterionStatusEnum", status, "status"
+        )
+        client.copy_from(
+            operation.update_mask,
+            protobuf_helpers.field_mask(None, criterion._pb),
+        )
+        operations.append(operation)
+
+    preview = ", ".join(criterion_resource_names[:3])
+    if len(criterion_resource_names) > 3:
+        preview += f", +{len(criterion_resource_names) - 3} more"
+
+    return _mutate(
+        service_name="AdGroupCriterionService",
+        method_name="mutate_ad_group_criteria",
+        request_type="MutateAdGroupCriteriaRequest",
+        customer_id=customer_id,
+        operations=operations,
+        confirm=confirm,
+        summary=(
+            f"Set {len(operations)} keyword(s) to {status.upper()}: {preview}."
+        ),
+    )
