@@ -231,6 +231,7 @@ def create_campaign(
     cpc_bid_ceiling_micros: int | None = None,
     target_search_network: bool = False,
     target_content_network: bool = False,
+    contains_eu_political_advertising: bool = False,
     confirm: bool = False,
 ) -> Dict[str, Any]:
     """Creates a campaign. Defaults to PAUSED so nothing starts spending by accident.
@@ -249,6 +250,10 @@ def create_campaign(
         cpc_bid_ceiling_micros: Optional bid ceiling, for TARGET_SPEND.
         target_search_network: Include Google search partners.
         target_content_network: Include the Display network.
+        contains_eu_political_advertising: Whether the campaign runs political
+            advertising in the EU. Required by the API since v25 -- the request is
+            rejected outright when it is absent, so it is always sent. Leave False
+            unless the advertiser really does run EU political ads.
         confirm: False validates only; True commits the change.
     """
     customer_id = _normalize_customer_id(customer_id)
@@ -307,6 +312,19 @@ def create_campaign(
     campaign.network_settings.target_search_network = target_search_network
     campaign.network_settings.target_content_network = target_content_network
     campaign.network_settings.target_partner_search_network = False
+
+    # Obrigatorio desde a v25: sem este campo a API recusa o create inteiro com
+    # "The required field was not present". Nao ha default do lado do Google.
+    campaign.contains_eu_political_advertising = _enum(
+        client,
+        "EuPoliticalAdvertisingStatusEnum",
+        (
+            "CONTAINS_EU_POLITICAL_ADVERTISING"
+            if contains_eu_political_advertising
+            else "DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING"
+        ),
+        "contains_eu_political_advertising",
+    )
 
     window = f"from {start_date}" + (f" to {end_date}" if end_date else "")
     return _mutate(
