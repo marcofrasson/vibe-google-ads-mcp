@@ -803,6 +803,66 @@ def update_ad_group_status(
 
 
 @mutate_mcp.tool(annotations=_DESTRUCTIVE)
+def update_ad_status(
+    customer_id: str,
+    ad_group_ad_resource_name: str,
+    status: str,
+    confirm: bool = False,
+) -> Dict[str, Any]:
+    """Enables, pauses or removes an ad (e.g. a Responsive Search Ad).
+
+    Use this after create_responsive_search_ad when a new ad replaces an old
+    one in the same ad group -- headlines and descriptions are not editable on
+    an existing RSA, so the old ad has to be paused by hand instead.
+
+    Get the resource name from a GAQL query on `ad_group_ad`, e.g.
+    SELECT ad_group_ad.resource_name FROM ad_group_ad WHERE campaign.id = 123.
+
+    Args:
+        customer_id: The id of the customer.
+        ad_group_ad_resource_name: e.g. customers/123/adGroupAds/456~789.
+            The '~' separates the ad group id from the ad id.
+        status: ENABLED, PAUSED or REMOVED.
+        confirm: False validates only; True commits the change.
+    """
+    customer_id = _normalize_customer_id(customer_id)
+    if status.upper() not in _ENTITY_STATUSES:
+        raise ToolError("status must be ENABLED, PAUSED or REMOVED.")
+    if (
+        "adGroupAds/" not in ad_group_ad_resource_name
+        or "~" not in ad_group_ad_resource_name
+    ):
+        raise ToolError(
+            f"'{ad_group_ad_resource_name}' is not an ad group ad resource "
+            "name. Expected customers/<cid>/adGroupAds/<ad_group_id>~<ad_id>."
+        )
+
+    client = utils.get_googleads_client()
+    operation = client.get_type("AdGroupAdOperation")
+    ad_group_ad = operation.update
+    ad_group_ad.resource_name = ad_group_ad_resource_name
+    ad_group_ad.status = _enum(
+        client, "AdGroupAdStatusEnum", status, "status"
+    )
+    client.copy_from(
+        operation.update_mask,
+        protobuf_helpers.field_mask(None, ad_group_ad._pb),
+    )
+
+    return _mutate(
+        service_name="AdGroupAdService",
+        method_name="mutate_ad_group_ads",
+        request_type="MutateAdGroupAdsRequest",
+        customer_id=customer_id,
+        operations=[operation],
+        confirm=confirm,
+        summary=(
+            f"Set ad {ad_group_ad_resource_name} to {status.upper()}."
+        ),
+    )
+
+
+@mutate_mcp.tool(annotations=_DESTRUCTIVE)
 def update_keyword_status(
     customer_id: str,
     criterion_resource_names: List[str],
