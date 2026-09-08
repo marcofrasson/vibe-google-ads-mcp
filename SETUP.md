@@ -33,10 +33,12 @@ Você também vai precisar receber o arquivo do cliente OAuth
 ### 1. Clonar e entrar
 
 ```bash
-git clone <url-do-fork> vibe-google-ads-mcp
+git clone https://github.com/marcofrasson/vibe-google-ads-mcp.git
 cd vibe-google-ads-mcp
-git checkout vibe/mutate-tools
 ```
+
+O repo é **privado**: peça acesso antes de clonar. A branch padrão já é
+`vibe/mutate-tools`, então não precisa trocar de branch.
 
 ### 2. Instalar
 
