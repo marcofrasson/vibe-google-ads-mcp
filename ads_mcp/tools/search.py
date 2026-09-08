@@ -46,6 +46,15 @@ def search(
 
     """
 
+    # O upstream só avisa na descrição para tirar os hifens; quem chama passa
+    # "187-999-9144" e perde a chamada. Normaliza aqui, igual mutate e planning.
+    digits = "".join(ch for ch in str(customer_id) if ch.isdigit())
+    if len(digits) != 10:
+        raise ToolError(
+            f"customer_id must have 10 digits, got '{customer_id}'."
+        )
+    customer_id = digits
+
     ga_service = utils.get_googleads_service("GoogleAdsService")
 
     query_parts = [f"SELECT {','.join(fields)} FROM {resource}"]
