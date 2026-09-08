@@ -98,9 +98,19 @@ proto correto.
 que é read-only, então as 13 tools próprias não estão expostas; (b) primeira chamada real das
 tools de `mutate` (dry-run e commit) e de `planning` numa conta sob o MCC.
 
-**Gotcha de ambiente:** com o app OAuth em modo *Testing*, o refresh token do ADC **expira em 7
-dias** e as chamadas falham com `invalid_grant: Token has been expired or revoked`. Reautenticar
-com `gcloud auth application-default login --scopes=...adwords,...cloud-platform`. Agora que a
-marca está verificada (28/jul) e o token aprovado, publicar o app "Em produção" encerra esse
-ciclo de reautenticação.
+**Gotcha de ambiente (resolvido):** enquanto o app OAuth esteve em modo *Testing*, o refresh token
+do ADC expirava em 7 dias e as chamadas falhavam com `invalid_grant: Token has been expired or
+revoked`. **O app está publicado — o ciclo acabou.** Medido em 08/set/2026: um ADC criado em
+11/ago, 28 dias antes, seguia chamando a API sem reautenticação. Isso também significa que não
+existe lista de *test user* para entrar: quem tem acesso à MCC loga direto.
+
+Se um dia o `invalid_grant` voltar (revogação manual, senha trocada), reautenticar com
+`gcloud auth application-default login --client-id-file=~/.config/gcloud/vibe_oauth_client.json
+--scopes=...adwords,...cloud-platform`.
+
+## Rodar em outra máquina
+
+Passo a passo em `SETUP.md`. O resumo: o código e os dois valores da MCC (developer token e
+`GOOGLE_ADS_LOGIN_CUSTOMER_ID`) são os mesmos para o time; o login OAuth é individual e exige que
+o e-mail da pessoa esteja na MCC.
 

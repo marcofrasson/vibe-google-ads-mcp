@@ -20,10 +20,10 @@ já tenha acesso às contas dentro daquela MCC.
 1. **Te adicionar como usuário na MCC** `187-999-9144`
    (Google Ads → Administrador → Acesso e segurança → Usuários).
    Sem isso o passo 5 devolve lista vazia.
-2. **Te adicionar como test user no app OAuth** do projeto `vibe-digital-503216`
-   (Google Cloud Console → APIs e serviços → Tela de permissão OAuth → Público-alvo).
-   Só é necessário enquanto o app estiver em **Testing**. Se ele já estiver
-   *Em produção*, pule.
+2. **Nada no app OAuth.** O app do projeto `vibe-digital-503216` está publicado
+   (*Em produção*), então não existe lista de test user para entrar e o login
+   não expira sozinho. Verificado em 08/set/2026: um login feito em 11/ago,
+   28 dias antes, seguia chamando a API.
 
 Você também vai precisar receber o arquivo do cliente OAuth
 (`vibe_oauth_client.json`) e os dois valores do `.env`. Peça a quem administra a conta.
@@ -68,9 +68,10 @@ gcloud auth application-default login \
 
 Os dois escopos são obrigatórios. Sem `--client-id-file` o Google bloqueia o login.
 
-> ⚠️ Enquanto o app OAuth estiver em **Testing**, este login **expira em 7 dias**
-> e as chamadas passam a falhar com `invalid_grant: Token has been expired or revoked`.
-> É só rodar o comando de novo. Publicar o app "Em produção" encerra esse ciclo.
+> O app OAuth está *Em produção*, então este login **não expira em 7 dias** —
+> aquele ciclo valia enquanto o app estava em *Testing*, e acabou. Se um dia
+> aparecer `invalid_grant: Token has been expired or revoked`, é só rodar o
+> comando de novo.
 
 ### 5. Testar antes de registrar no Claude
 
@@ -111,7 +112,7 @@ Reinicie a sessão do Claude Code para o MCP carregar.
 |---|---|
 | `faltam variáveis: ...` | passo 3 |
 | `não achei o servidor em .../.venv/bin/google-ads-mcp` | passo 2 |
-| `invalid_grant: Token has been expired or revoked` | login venceu, refaça o passo 4 |
+| `invalid_grant: Token has been expired or revoked` | login foi revogado, refaça o passo 4 |
 | `The developer token is only approved for use with test accounts` | o token está em nível *Conta de teste* — não opera conta real |
 | `USER_PERMISSION_DENIED` | seu e-mail não está na MCC, ou a conta do cliente não está vinculada a ela |
 | lista de contas acessíveis vem vazia | idem acima |
