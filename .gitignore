@@ -37,3 +37,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .nox/.venv/
+
+# Segredos locais (ver .env.example e SETUP.md)
+.env
+.env.local
+.venv/

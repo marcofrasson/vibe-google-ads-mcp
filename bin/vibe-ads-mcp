@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Sobe o fork Vibe do google-ads-mcp (leitura + namespaces mutate e planning).
+#
+# Existe para que o registro do MCP não precise carregar segredo: o developer
+# token e o login-customer-id (o MCC) ficam num arquivo de ambiente lido aqui,
+# em tempo de execução. Nada de segredo entra no .mcp.json nem no git.
+#
+# Onde ele procura o arquivo de ambiente, nesta ordem:
+#   1. $VIBE_ADS_ENV_FILE            (se você definiu)
+#   2. <raiz do repo>/.env           (o padrão para quem clona; gitignored)
+#   3. ~/www/apps/vibe-digital-site/.env.local  (a máquina do Marco)
+#
+# Se as duas variáveis já vierem do ambiente, nenhum arquivo é necessário.
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+candidatos=()
+[[ -n "${VIBE_ADS_ENV_FILE:-}" ]] && candidatos+=("$VIBE_ADS_ENV_FILE")
+candidatos+=("$REPO/.env" "$HOME/www/apps/vibe-digital-site/.env.local")
+
+ENV_FILE=""
+for c in "${candidatos[@]}"; do
+  if [[ -f "$c" ]]; then ENV_FILE="$c"; break; fi
+done
+
+if [[ -n "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+faltando=()
+[[ -z "${GOOGLE_ADS_DEVELOPER_TOKEN:-}" ]] && faltando+=("GOOGLE_ADS_DEVELOPER_TOKEN")
+[[ -z "${GOOGLE_ADS_LOGIN_CUSTOMER_ID:-}" ]] && faltando+=("GOOGLE_ADS_LOGIN_CUSTOMER_ID")
+
+if (( ${#faltando[@]} > 0 )); then
+  {
+    echo "vibe-ads-mcp: faltam variáveis: ${faltando[*]}"
+    echo
+    if [[ -n "$ENV_FILE" ]]; then
+      echo "Li o arquivo $ENV_FILE, mas ele não define tudo."
+    else
+      echo "Não achei arquivo de ambiente em nenhum destes lugares:"
+      printf '  %s\n' "${candidatos[@]}"
+    fi
+    echo
+    echo "Copie $REPO/.env.example para $REPO/.env e preencha,"
+    echo "ou defina VIBE_ADS_ENV_FILE apontando para o seu arquivo."
+    echo "Passo a passo completo: $REPO/SETUP.md"
+  } >&2
+  exit 1
+fi
+
+BIN="$REPO/.venv/bin/google-ads-mcp"
+if [[ ! -x "$BIN" ]]; then
+  {
+    echo "vibe-ads-mcp: não achei o servidor em $BIN"
+    echo
+    echo "Falta instalar. Na raiz do repo:"
+    echo "  python3 -m venv .venv && .venv/bin/pip install -e ."
+    echo "Passo a passo completo: $REPO/SETUP.md"
+  } >&2
+  exit 1
+fi
+
+exec "$BIN" "$@"
