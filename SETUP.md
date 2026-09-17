@@ -75,6 +75,22 @@ Os dois escopos são obrigatórios. Sem `--client-id-file` o Google bloqueia o l
 > aparecer `invalid_grant: Token has been expired or revoked`, é só rodar o
 > comando de novo.
 
+### A tela "O Google não verificou este app"
+
+Vai aparecer. O app é externo e ainda não passou pela verificação do Google, que
+é exigida para o escopo `adwords`. **Não é erro e não falta ninguém te liberar:**
+
+1. clique em **Avançado** (ou *Advanced*), no rodapé da tela;
+2. clique em **Acessar <nome do app> (não seguro)**;
+3. siga o login normal.
+
+O "não seguro" é o Google dizendo que não auditou o app — ele é nosso, do projeto
+`vibe-digital-503216`.
+
+O projeto aceita **100 pessoas no total**, contadas para sempre. É limite de vida
+do projeto e não dá para zerar, então não fique refazendo login com contas
+diferentes para testar.
+
 ### 5. Testar antes de registrar no Claude
 
 ```bash
@@ -115,6 +131,8 @@ Reinicie a sessão do Claude Code para o MCP carregar.
 | `faltam variáveis: ...` | passo 3 |
 | `não achei o servidor em .../.venv/bin/google-ads-mcp` | passo 2 |
 | `invalid_grant: Token has been expired or revoked` | login foi revogado, refaça o passo 4 |
+| Tela "O Google não verificou este app" | normal — **Avançado → Acessar (não seguro)**, ver acima |
+| O login abre mas o escopo `adwords` é recusado | faltou o `--client-id-file` no comando do passo 4; o client padrão do gcloud não serve |
 | `The developer token is only approved for use with test accounts` | o token está em nível *Conta de teste* — não opera conta real |
 | `USER_PERMISSION_DENIED` | seu e-mail não está na MCC, ou a conta do cliente não está vinculada a ela |
 | lista de contas acessíveis vem vazia | idem acima |
