@@ -61,7 +61,7 @@ Desligar: `planning: false` no `ads_mcp/tools_config.yaml`.
 
 ## Validação local antes do round trip
 
-O que é checado antes de gastar uma chamada: formato do `customer_id` (aceita `777-012-3631`),
+O que é checado antes de gastar uma chamada: formato do `customer_id` (aceita `123-456-7890`),
 datas reais no formato `YYYY-MM-DD` (`01/08/2026` é recusado explicitamente), contagem e limite de
 caracteres dos assets de RSA (3–15 headlines de até 30, 2–4 descrições de até 90), e valores de enum,
 com a lista de opções válidas na mensagem de erro.
@@ -78,34 +78,30 @@ com a lista de opções válidas na mensagem de erro.
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate && pip install -e .
-set -a; source ~/www/apps/vibe-digital-site/.env.local; set +a   # developer token + login customer id
+set -a; source .env; set +a   # developer token + login customer id (ver .env.example)
 ```
 
 Auth via ADC: `gcloud auth application-default login` com os escopos `adwords` e `cloud-platform`.
 
-## Estado atual (10/ago/2026)
+## Estado atual
 
-**✅ Basic Access aprovado.** O developer token do MCC `187-999-9144` opera contas reais —
-leitura e escrita —, com cota de **15.000 operações/dia**. O gate de Test Access
-(`The developer token is only approved for use with test accounts`) não existe mais, e com ele
+**Basic Access aprovado (10/ago/2026).** O developer token da MCC opera contas reais, leitura e
+escrita, com cota de 15.000 operações/dia. O gate de Test Access
+(`The developer token is only approved for use with test accounts`) não se aplica mais, e com ele
 caiu a necessidade da hierarquia de contas de teste.
 
 **Validado:** as 16 tools montam no servidor (3 do upstream + 11 de `mutate` + 2 de `planning`),
 a validação local recusa entradas inválidas, e o request chega à API com `validate_only=True` e o
-proto correto.
-
-**Falta:** (a) registrar este fork no Claude Code — o MCP ativo ainda é o pipx do repo oficial,
-que é read-only, então as 13 tools próprias não estão expostas; (b) primeira chamada real das
-tools de `mutate` (dry-run e commit) e de `planning` numa conta sob o MCC.
+proto correto. O fork está registrado como MCP desde 12/ago/2026.
 
 **Gotcha de ambiente (resolvido):** enquanto o app OAuth esteve em modo *Testing*, o refresh token
 do ADC expirava em 7 dias e as chamadas falhavam com `invalid_grant: Token has been expired or
-revoked`. **O app está publicado — o ciclo acabou.** Medido em 08/set/2026: um ADC criado em
-11/ago, 28 dias antes, seguia chamando a API sem reautenticação. Isso também significa que não
-existe lista de *test user* para entrar: quem tem acesso à MCC loga direto.
+revoked`. Com o app publicado, o ciclo acabou: medido em 08/set/2026, um ADC criado 28 dias antes
+seguia chamando a API sem reautenticação. Também não existe lista de *test user* para entrar: quem
+tem acesso à MCC loga direto.
 
-Se um dia o `invalid_grant` voltar (revogação manual, senha trocada), reautenticar com
-`gcloud auth application-default login --client-id-file=~/.config/gcloud/vibe_oauth_client.json
+Se o `invalid_grant` voltar (revogação manual, senha trocada), reautenticar com
+`gcloud auth application-default login --client-id-file=<seu-oauth-client>.json
 --scopes=...adwords,...cloud-platform`.
 
 ## Rodar em outra máquina

@@ -47,7 +47,7 @@ def search(
     """
 
     # O upstream só avisa na descrição para tirar os hifens; quem chama passa
-    # "187-999-9144" e perde a chamada. Normaliza aqui, igual mutate e planning.
+    # "123-456-7890" e perde a chamada. Normaliza aqui, igual mutate e planning.
     digits = "".join(ch for ch in str(customer_id) if ch.isdigit())
     if len(digits) != 10:
         raise ToolError(

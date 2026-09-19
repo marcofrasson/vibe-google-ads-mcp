@@ -9,7 +9,7 @@ planejamento de palavra-chave (`planning_*`). Branch de trabalho: `vibe/mutate-t
 |---|---|---|
 | Este código | o fork | sim |
 | `GOOGLE_ADS_DEVELOPER_TOKEN` | diz **qual empresa** chama a API | sim, o mesmo para o time |
-| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | a MCC (`187-999-9144`) | sim |
+| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | a MCC da empresa (ex.: `123-456-7890`) | sim |
 | Login OAuth (ADC) | diz **quem** chama a API | **não**. Cada pessoa faz o seu |
 
 O developer token sozinho não abre conta nenhuma. Ele só vale junto com um login que
@@ -17,16 +17,16 @@ já tenha acesso às contas dentro daquela MCC.
 
 ## Antes de começar, alguém com acesso precisa fazer 2 coisas por você
 
-1. **Te adicionar como usuário na MCC** `187-999-9144`
+1. **Te adicionar como usuário na MCC**
    (Google Ads → Administrador → Acesso e segurança → Usuários).
    Sem isso o passo 5 devolve lista vazia.
-2. **Nada no app OAuth.** O app do projeto `vibe-digital-503216` está publicado
-   (*Em produção*), então não existe lista de test user para entrar e o login
-   não expira sozinho. Verificado em 08/set/2026: um login feito em 11/ago,
-   28 dias antes, seguia chamando a API.
+2. **Nada no app OAuth**, se o app do projeto estiver publicado (*Em produção*):
+   não existe lista de test user para entrar e o login não expira sozinho. Com o app
+   em *Testing*, o refresh token morre a cada 7 dias e o e-mail precisa estar na
+   lista de test users.
 
-Você também vai precisar receber o arquivo do cliente OAuth
-(`vibe_oauth_client.json`) e os dois valores do `.env`. Peça a quem administra a conta.
+Você também vai precisar receber o arquivo do cliente OAuth (o `.json` baixado do
+Google Cloud) e os dois valores do `.env`. Peça a quem administra a conta.
 
 ## Passo a passo
 
@@ -37,8 +37,7 @@ git clone https://github.com/marcofrasson/vibe-google-ads-mcp.git
 cd vibe-google-ads-mcp
 ```
 
-O repo é **privado**: peça acesso antes de clonar. A branch padrão já é
-`vibe/mutate-tools`, então não precisa trocar de branch.
+A branch padrão já é `vibe/mutate-tools`, então não precisa trocar de branch.
 
 ### 2. Instalar
 
@@ -60,11 +59,11 @@ Se você prefere guardar em outro lugar, aponte:
 
 ### 4. Seu login (é individual)
 
-Guarde o `vibe_oauth_client.json` em `~/.config/gcloud/` e rode:
+Guarde o arquivo do cliente OAuth em `~/.config/gcloud/oauth_client.json` e rode:
 
 ```bash
 gcloud auth application-default login \
-  --client-id-file="$HOME/.config/gcloud/vibe_oauth_client.json" \
+  --client-id-file="$HOME/.config/gcloud/oauth_client.json" \
   --scopes=https://www.googleapis.com/auth/adwords,https://www.googleapis.com/auth/cloud-platform
 ```
 
@@ -84,8 +83,8 @@ Vai aparecer. O app é externo e ainda não passou pela verificação do Google,
 2. clique em **Acessar <nome do app> (não seguro)**;
 3. siga o login normal.
 
-O "não seguro" é o Google dizendo que não auditou o app — ele é nosso, do projeto
-`vibe-digital-503216`.
+O "não seguro" é o Google dizendo que não auditou o app. O app é o do seu próprio
+projeto no Google Cloud.
 
 O projeto aceita **100 pessoas no total**, contadas para sempre. É limite de vida
 do projeto e não dá para zerar, então não fique refazendo login com contas
@@ -108,7 +107,7 @@ No `.mcp.json` do repo onde você vai operar (no nosso caso, `gestor-ads/`):
   "mcpServers": {
     "vibe-google-ads": {
       "type": "stdio",
-      "command": "${VIBE_ADS_MCP_BIN:-${HOME}/www/apps/vibe-google-ads-mcp/bin/vibe-ads-mcp}",
+      "command": "${HOME}/www/apps/vibe-google-ads-mcp/bin/vibe-ads-mcp",
       "args": [],
       "env": {}
     }
@@ -116,11 +115,8 @@ No `.mcp.json` do repo onde você vai operar (no nosso caso, `gestor-ads/`):
 }
 ```
 
-Se você clonou o fork em outro lugar, exporte o caminho no seu shell:
-
-```bash
-export VIBE_ADS_MCP_BIN="$HOME/onde/voce/clonou/bin/vibe-ads-mcp"
-```
+Se você clonou o fork em outro lugar, troque o caminho do `command` pelo seu.
+O Claude Code expande `${HOME}`, mas não expande variável dentro de valor padrão.
 
 Reinicie a sessão do Claude Code para o MCP carregar.
 
