@@ -4,6 +4,30 @@ This repo contains the source code for running an
 [MCP](https://modelcontextprotocol.io) server that interacts with the
 [Google Ads API](https://developers.google.com/google-ads/api).
 
+> ## This is a fork: read + write
+>
+> Fork of [`googleads/google-ads-mcp`](https://github.com/googleads/google-ads-mcp), which is
+> read-only. This fork adds 13 tools across two namespaces, so an agent can build and manage
+> campaigns instead of only reporting on them.
+>
+> **`mutate` (11 tools, write):** campaign budgets, campaigns, geo targets, languages, campaign
+> negative keywords, ad groups, keywords, keyword status and responsive search ads.
+>
+> **`planning` (2 tools, read):** `generate_keyword_ideas` and `suggest_geo_targets`, covering the
+> Keyword Planning Services capability.
+>
+> **Every write is dry-run by default.** A write tool without `confirm` sends the request with
+> `validate_only=True`: the API validates it, changes nothing, and returns a readable `summary`.
+> Only a second call with `confirm=True` commits. Campaigns are created `PAUSED`, so nothing
+> starts spending by accident. Disable either namespace in `ads_mcp/tools_config.yaml`.
+>
+> Working branch: `vibe/mutate-tools`. Design notes and API gotchas in
+> [`VIBE.md`](VIBE.md) (Portuguese); install steps in [`SETUP.md`](SETUP.md) (Portuguese).
+> Upstream code is Apache 2.0 and stays that way. The two namespaces above are the changes.
+>
+> Data from the Keyword Planner tools is for internal use: it must not be shown to clients,
+> published in client-facing reports or dashboards, or resold.
+
 ## Tools
 
 The server uses the
